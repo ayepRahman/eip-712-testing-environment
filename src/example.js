@@ -65,6 +65,7 @@ const domainData = {
   verifyingContract: '0x1C56346CD2A2Bf3202F771f50d3D14a367B48070',
   salt: '0xf2d857f4a3edcb9b78b4d503bfe733db1e3f6cdc2b7971ee739626c97e86a558',
 };
+
 var message = {
   amount: 100,
   bidder: {
@@ -73,11 +74,11 @@ var message = {
   },
 };
 
-const data = JSON.stringify({
+export const data = JSON.stringify({
   types: {
     EIP712Domain: domain,
     Bid: bid,
-    IdentityL: identity,
+    Identity: identity,
   },
   domain: domainData,
   primaryType: 'Bid',
