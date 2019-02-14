@@ -6,12 +6,27 @@ import { data } from 'example';
 
 import './index.css';
 
-const App = () => {
+const App = props => {
   const context = useWeb3Context();
+  const { domain, Bid, Identity, domainData, message } = props;
   const { setConnector, connectorName, account, active } = context;
   const [web3, setWeb3] = useState();
   const [hasMetaMask, setHasMetaMask] = useState(false);
-  const [showInstall, setShowInstall] = useState(false);
+
+  debugger;
+
+  const [data] = useState({
+    types: {
+      EIP712Domain: domain,
+      Bid,
+      Identity,
+    },
+    domain: domainData,
+    primaryType: 'Bid',
+    message,
+  });
+
+  const finalizeData = JSON.stringify(data);
 
   useEffect(() => {
     const web3Library = connectorName === 'metaMask' && context.library;
@@ -19,18 +34,13 @@ const App = () => {
     if (web3Library) {
       setWeb3(web3Library);
       setHasMetaMask(true);
-    }
-  });
-
-  const setMetaMask = () => {
-    const web3Library = connectorName === 'metaMask' && context.library;
-
-    if (!web3Library) {
-      setShowInstall(true);
     } else {
       setConnector('metaMask');
     }
-  };
+  });
+
+  console.log('HAS web3', web3);
+  console.log('finalizeData', finalizeData);
 
   const renderMetaMaskInstallation = () => {
     return (
@@ -46,14 +56,6 @@ const App = () => {
           </a>{' '}
           to start using this feature
         </h2>
-      </Col>
-    );
-  };
-
-  const renderMetaMaskButton = () => {
-    return (
-      <Col className="text-center pb-3" xs={12}>
-        {!hasMetaMask && <Button onClick={() => setMetaMask()}>Activate MetaMask</Button>}
       </Col>
     );
   };
@@ -82,14 +84,10 @@ const App = () => {
   };
 
   const sendSignTypedData = async () => {
-    console.log('Trigger send sign');
-    console.log('WEB3', web3);
-    console.log('CONTEXT', context);
-
     try {
       const result = await web3.currentProvider.sendAsync({
         method: 'eth_signTypedData_v3',
-        params: [account, data],
+        params: [account, finalizeData],
         from: account,
       });
 
@@ -106,13 +104,38 @@ const App = () => {
           <h1>EIP712 testing environment</h1>
         </Col>
 
-        {!showInstall && renderMetaMaskButton()}
-        {showInstall && renderMetaMaskInstallation()}
+        {!hasMetaMask && renderMetaMaskInstallation()}
         {hasMetaMask && renderUserMetamask()}
         {hasMetaMask && signedWithMetaMaskButton()}
       </Row>
     </Container>
   );
+};
+
+App.defaultProps = {
+  domain: [
+    { name: 'name', type: 'string' },
+    { name: 'version', type: 'string' },
+    { name: 'chainId', type: 'uint256' },
+    { name: 'verifyingContract', type: 'address' },
+    { name: 'salt', type: 'bytes32' },
+  ],
+  domainData: {
+    name: 'EIP 712 Testing Dapp',
+    version: '2',
+    chainId: 4,
+    verifyingContract: '0x1C56346CD2A2Bf3202F771f50d3D14a367B48070',
+    salt: '0xf2d857f4a3edcb9b78b4d503bfe733db1e3f6cdc2b7971ee739626c97e86a558',
+  },
+  message: {
+    amount: 100,
+    bidder: {
+      userId: 123123,
+      wallet: '0x3333333333333333333333333333333333333333',
+    },
+  },
+  Bid: [{ name: 'amount', type: 'uint256' }, { name: 'bidder', type: 'Identity' }],
+  Identity: [{ name: 'userId', type: 'uint256' }, { name: 'wallet', type: 'address' }],
 };
 
 export default App;
