@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useWeb3Context } from 'web3-react';
-import { Button, Container, Row, Col } from 'react-bootstrap';
-
-import { data } from 'example';
+import { Button, Container, Row, Col, Alert } from 'react-bootstrap';
 
 import './index.css';
 
@@ -12,8 +10,9 @@ const App = props => {
   const { setConnector, connectorName, account, active } = context;
   const [web3, setWeb3] = useState();
   const [hasMetaMask, setHasMetaMask] = useState(false);
+  const [errorMsg, setErrorMsg] = useState();
 
-  debugger;
+  console.log('ERROR', !!errorMsg);
 
   const [data] = useState({
     types: {
@@ -27,6 +26,7 @@ const App = props => {
   });
 
   const finalizeData = JSON.stringify(data);
+  debugger;
 
   useEffect(() => {
     const web3Library = connectorName === 'metaMask' && context.library;
@@ -38,9 +38,6 @@ const App = props => {
       setConnector('metaMask');
     }
   });
-
-  console.log('HAS web3', web3);
-  console.log('finalizeData', finalizeData);
 
   const renderMetaMaskInstallation = () => {
     return (
@@ -83,23 +80,37 @@ const App = props => {
     );
   };
 
-  const sendSignTypedData = async () => {
-    try {
-      const result = await web3.currentProvider.sendAsync({
+  const sendSignTypedData = () => {
+    web3.currentProvider.sendAsync(
+      {
         method: 'eth_signTypedData_v3',
         params: [account, finalizeData],
         from: account,
-      });
+        jsonrpc: '2.0',
+        id: new Date().getTime(),
+      },
+      (error, result) => {
+        if (error) {
+          return setErrorMsg(error.message);
+        }
 
-      console.log(result);
-    } catch (error) {
-      console.log('sendSignTypedData ERROR', error.message);
-    }
+        debugger;
+
+        const signature = result.result.substring(2);
+        const r = '0x' + signature.substring(0, 64);
+        const s = '0x' + signature.substring(64, 128);
+        const v = parseInt(signature.substring(128, 130), 16);
+        console.log(r, s, v);
+        debugger;
+      }
+    );
   };
 
   return (
     <Container className="py-5">
       <Row className="justify-content-center">
+        {!!errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
+
         <Col className="pb-5 text-center" xs={12}>
           <h1>EIP712 testing environment</h1>
         </Col>
@@ -123,7 +134,7 @@ App.defaultProps = {
   domainData: {
     name: 'EIP 712 Testing Dapp',
     version: '2',
-    chainId: 4,
+    // chainId: 4,
     verifyingContract: '0x1C56346CD2A2Bf3202F771f50d3D14a367B48070',
     salt: '0xf2d857f4a3edcb9b78b4d503bfe733db1e3f6cdc2b7971ee739626c97e86a558',
   },
