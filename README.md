@@ -1,5 +1,14 @@
 # eip-712-testing-environment
 
+## Motive for this project
+
+Bootstrap a simple project that test out the new ETHEREUM EIP712 MetaMask functionality.
+Ethereum wallets like MetaMask will soon introduce the EIP712 standard for typed message signing. This standard allows wallets to display data in signing prompts in a structured and readable format. EIP712 is a great step forward for security and usability because users will no longer need to sign off on inscrutable hexadecimal strings, which is a practice which can be confusing and insecure.
+
+## GIF:
+
+![](eip712.gif)
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
