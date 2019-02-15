@@ -4,15 +4,17 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Quickstart
 
-This project is running the latest `react` and `react-dom` `16.8`
+This project is running the latest `react` and `react-dom` `v16.8`
 and using the latest React `Hooks`.
 
-If have not install yarn in you machine install yarn using `brew`
+If you have not install `yarn` in you machine install yarn using `brew`
 or for other methods https://yarnpkg.com/lang/en/docs/install/#mac-stable
-`brew install yarn`
+
+### `brew install yarn`
 
 Run yarn to install the dependencies.
-`yarn`
+
+### `yarn`
 
 To start locally run:
 
