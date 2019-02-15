@@ -89,7 +89,8 @@ const App = props => {
         if (error) {
           return setErrorMsg(error.message);
         } else if (response && response.error) {
-          return setErrorMsg(response.error.message);
+          const errMsg = response.error.message.substring(0, 70).concat('...');
+          return setErrorMsg(errMsg);
         } else {
           const result = response && response.result;
 
