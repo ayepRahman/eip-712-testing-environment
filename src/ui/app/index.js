@@ -8,7 +8,7 @@ import './index.css';
 const App = props => {
   const context = useWeb3Context();
   const { domain, Bid, Identity, domainData, message } = props;
-  const { setConnector, connectorName, account, active } = context;
+  const { setConnector, connectorName, account } = context;
   const [web3, setWeb3] = useState();
   const [hasMetaMask, setHasMetaMask] = useState(false);
   const [errorMsg, setErrorMsg] = useState();

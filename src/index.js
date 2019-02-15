@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import Web3 from 'web3';
 import Web3Provider from 'web3-react';
 import { connectors } from 'ui/utils/web3-connector';
 
