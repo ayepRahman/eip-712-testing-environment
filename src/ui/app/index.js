@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useWeb3Context } from 'web3-react';
 import { Button, Container, Row, Col, Alert } from 'react-bootstrap';
+import ReactJson from 'react-json-view';
 
 import './index.css';
 
@@ -11,10 +12,9 @@ const App = props => {
   const [web3, setWeb3] = useState();
   const [hasMetaMask, setHasMetaMask] = useState(false);
   const [errorMsg, setErrorMsg] = useState();
+  const [successMsg, setSuccessMsg] = useState();
 
-  console.log('ERROR', !!errorMsg);
-
-  const [data] = useState({
+  const [data, setData] = useState({
     types: {
       EIP712Domain: domain,
       Bid,
@@ -26,7 +26,7 @@ const App = props => {
   });
 
   const finalizeData = JSON.stringify(data);
-  debugger;
+  const parseData = JSON.parse(finalizeData);
 
   useEffect(() => {
     const web3Library = connectorName === 'metaMask' && context.library;
@@ -38,6 +38,10 @@ const App = props => {
       setConnector('metaMask');
     }
   });
+
+  const renderJsonViewer = () => {
+    return <ReactJson src={parseData} theme="monokai" />;
+  };
 
   const renderMetaMaskInstallation = () => {
     return (
@@ -72,15 +76,7 @@ const App = props => {
     );
   };
 
-  const signedWithMetaMaskButton = () => {
-    return (
-      <Col className="text-center" xs={12}>
-        <Button onClick={() => sendSignTypedData()}>Test Signed</Button>
-      </Col>
-    );
-  };
-
-  const sendSignTypedData = () => {
+  const signTypedData = () => {
     web3.currentProvider.sendAsync(
       {
         method: 'eth_signTypedData_v3',
@@ -89,35 +85,58 @@ const App = props => {
         jsonrpc: '2.0',
         id: new Date().getTime(),
       },
-      (error, result) => {
+      (error, response) => {
         if (error) {
           return setErrorMsg(error.message);
+        } else if (response && response.error) {
+          return setErrorMsg(response.error.message);
+        } else {
+          const result = response && response.result;
+
+          const signature = result && result.substring(2);
+          const r = signature && '0x' + signature.substring(0, 64);
+          const s = signature && '0x' + signature.substring(64, 128);
+          const v = signature && parseInt(signature.substring(128, 130), 16);
+          const signatures = {
+            signature,
+            r,
+            s,
+            v,
+          };
+
+          setSuccessMsg(`Successfully signed data!! ${signature}`);
+          setData({ signatures, ...data });
         }
-
-        debugger;
-
-        const signature = result.result.substring(2);
-        const r = '0x' + signature.substring(0, 64);
-        const s = '0x' + signature.substring(64, 128);
-        const v = parseInt(signature.substring(128, 130), 16);
-        console.log(r, s, v);
-        debugger;
       }
     );
   };
 
-  return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        {!!errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
+  const signedWithMetaMaskButton = () => {
+    return (
+      <Col className="text-center" xs={12}>
+        <Button size="lg" onClick={() => signTypedData()}>
+          Test Signed
+        </Button>
+      </Col>
+    );
+  };
 
+  return (
+    <Container fluid className="py-5 text-white">
+      <Row className="justify-content-center">
+        <Col>
+          {!!errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
+          {!!successMsg && <Alert variant="success">{successMsg}</Alert>}
+        </Col>
         <Col className="pb-5 text-center" xs={12}>
           <h1>EIP712 testing environment</h1>
         </Col>
-
-        {!hasMetaMask && renderMetaMaskInstallation()}
-        {hasMetaMask && renderUserMetamask()}
-        {hasMetaMask && signedWithMetaMaskButton()}
+        <Col xs={6}>
+          {!hasMetaMask && renderMetaMaskInstallation()}
+          {hasMetaMask && renderUserMetamask()}
+          {hasMetaMask && signedWithMetaMaskButton()}
+        </Col>
+        <Col xs={6}>{renderJsonViewer()}</Col>
       </Row>
     </Container>
   );
@@ -134,7 +153,7 @@ App.defaultProps = {
   domainData: {
     name: 'EIP 712 Testing Dapp',
     version: '2',
-    // chainId: 4,
+    chainId: 4,
     verifyingContract: '0x1C56346CD2A2Bf3202F771f50d3D14a367B48070',
     salt: '0xf2d857f4a3edcb9b78b4d503bfe733db1e3f6cdc2b7971ee739626c97e86a558',
   },
