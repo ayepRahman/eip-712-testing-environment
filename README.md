@@ -39,9 +39,4 @@ Ethereum wallets like MetaMask will soon introduce the EIP712 standard for typed
 
 ## Checklist
 
-- add a form input to change the value of the sign data.
 - add additional provider for testing like INFURA and WALLET CONNECT.
-
-```
-
-```
