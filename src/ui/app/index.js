@@ -3,7 +3,6 @@ import { useWeb3Context } from 'web3-react';
 import { Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import { Form } from 'react-bootstrap';
 import ReactJson from 'react-json-view';
-// import { useForm, useField } from 'react-final-form-hooks';
 import { Form as FinalForm, Field } from 'react-final-form';
 import validate from 'validate.js';
 
@@ -29,23 +28,18 @@ const constraints = {
 };
 
 const App = props => {
-  const context = useWeb3Context();
-  const { domain, Bid, Identity, domainData } = props;
-  const { setConnector, connectorName, account } = context;
-  const [message, setMessage] = useState({
-    amount: '',
-    bidder: {
-      username: '',
-      wallet: '',
-    },
-  });
+  const web3Context = useWeb3Context();
+  const { setConnector, connectorName, account } = web3Context;
+  const [data, setData] = useState({});
   const [web3, setWeb3] = useState();
   const [hasMetaMask, setHasMetaMask] = useState(false);
   const [errorMsg, setErrorMsg] = useState();
   const [successMsg, setSuccessMsg] = useState();
 
+  const parseData = JSON.parse(JSON.stringify(data));
+
   useEffect(() => {
-    const web3Library = connectorName === 'metaMask' && context.library;
+    const web3Library = connectorName === 'metaMask' && web3Context.library;
 
     if (web3Library) {
       setWeb3(web3Library);
@@ -54,10 +48,6 @@ const App = props => {
       setConnector('metaMask');
     }
   });
-
-  // const onSubmit = values => {
-  //   console.log('trigger values'.values);
-  // };
 
   const renderJsonViewer = () => {
     return <ReactJson src={parseData} theme="monokai" />;
@@ -84,7 +74,7 @@ const App = props => {
   const signTypedData = values => {
     const { username, walletAddress, token } = values;
 
-    const [data, setData] = useState({
+    const data = JSON.stringify({
       types: {
         EIP712Domain: [
           { name: 'name', type: 'string' },
@@ -104,17 +94,23 @@ const App = props => {
         salt: '0xf2d857f4a3edcb9b78b4d503bfe733db1e3f6cdc2b7971ee739626c97e86a558',
       },
       primaryType: 'Bid',
-      message,
+      message: {
+        amount: token,
+        bidder: {
+          username,
+          wallet: walletAddress,
+        },
+      },
     });
 
-    const finalizeData = JSON.stringify(data);
-    const parseData = JSON.parse(finalizeData);
+    const signer = walletAddress;
+    const params = [signer, data];
 
     web3.currentProvider.sendAsync(
       {
         method: 'eth_signTypedData_v3',
-        params: [account, finalizeData],
-        from: account,
+        params,
+        from: signer,
         jsonrpc: '2.0',
         id: new Date().getTime(),
       },
@@ -139,15 +135,13 @@ const App = props => {
           };
 
           setSuccessMsg(`Successfully signed data!! ${signature}`);
-          setData({ signatures, ...data });
+          setData({ signatures, ...JSON.parse(data) });
         }
       }
     );
   };
 
-  const validators = field => {
-    return validate(field, constraints);
-  };
+  const validators = fields => validate(fields, constraints);
 
   const renderForm = () => {
     return (
@@ -158,46 +152,68 @@ const App = props => {
         render={({ handleSubmit, pristine, invalid }) => {
           return (
             <Form onSubmit={handleSubmit}>
-              <Field name="username">
-                {({ input, meta }) => {
-                  return (
-                    <Form.Group>
-                      <Form.Label>Name</Form.Label>
-                      <Form.Control {...input} type="text" placeholder="John Doe" />
-                      {meta.touched && meta.error && (
-                        <Form.Control.Feedback type="invalid">{meta.error}</Form.Control.Feedback>
-                      )}
-                    </Form.Group>
-                  );
-                }}
-              </Field>
-
               <Field name="walletAddress">
                 {({ input, meta }) => {
                   return (
                     <Form.Group>
                       <Form.Label>Wallet Address</Form.Label>
                       <Form.Control disabled {...input} type="text" />
-                      {meta.touched && meta.error && (
-                        <Form.Control.Feedback type="invalid">{meta.error}</Form.Control.Feedback>
+                      {meta.touched && !!meta.error && (
+                        <Form.Control.Feedback type="invalid">
+                          {meta && meta.error && meta.error[0]}
+                        </Form.Control.Feedback>
                       )}
                     </Form.Group>
                   );
                 }}
               </Field>
+
+              <Field name="username">
+                {({ input, meta }) => {
+                  return (
+                    <Form.Group>
+                      <Form.Label>Name</Form.Label>
+                      <Form.Control
+                        {...input}
+                        type="text"
+                        placeholder="John Doe"
+                        isInvalid={meta.touched && !!meta.error}
+                      />
+                      {meta.touched && !!meta.error && (
+                        <Form.Control.Feedback type="invalid">
+                          {meta && meta.error && meta.error[0]}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+                  );
+                }}
+              </Field>
+
               <Field name="token">
                 {({ input, meta }) => (
                   <Form.Group>
                     <Form.Label>Token Amount</Form.Label>
-                    <Form.Control {...input} type="text" placeholder="0.00" />
-                    {meta.touched && meta.error && (
-                      <Form.Control.Feedback type="invalid">{meta.error}</Form.Control.Feedback>
+                    <Form.Control
+                      {...input}
+                      type="text"
+                      placeholder="0.00"
+                      isInvalid={meta.touched && !!meta.error}
+                    />
+                    {meta.touched && !!meta.error && (
+                      <Form.Control.Feedback type="invalid">
+                        {meta && meta.error && meta.error[0]}
+                      </Form.Control.Feedback>
                     )}
                   </Form.Group>
                 )}
               </Field>
 
-              <Button color="primary" size="lg" type="submit" disabled={pristine || invalid}>
+              <Button
+                color="primary"
+                size="lg"
+                type="submit"
+                // disabled={pristine || invalid}
+              >
                 Signed
               </Button>
             </Form>
@@ -210,7 +226,7 @@ const App = props => {
   return (
     <Container fluid className="py-5 text-white">
       <Row className="justify-content-center">
-        <Col>
+        <Col xs={12}>
           {!!errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
           {!!successMsg && <Alert variant="success">{successMsg}</Alert>}
         </Col>
@@ -218,29 +234,11 @@ const App = props => {
           <h1>EIP712 testing environment</h1>
         </Col>
         {!hasMetaMask && <Col xs={6}>{renderMetaMaskInstallation()}</Col>}
-        {hasMetaMask && <Col xs={6}>{renderForm()}</Col>}
+        {hasMetaMask && <Col xs={4}>{renderForm()}</Col>}
         <Col xs={6}>{renderJsonViewer()}</Col>
       </Row>
     </Container>
   );
 };
-
-// App.defaultProps = {
-//   domain: [
-//     { name: 'name', type: 'string' },
-//     { name: 'version', type: 'string' },
-//     { name: 'chainId', type: 'uint256' },
-//     { name: 'verifyingContract', type: 'address' },
-//     { name: 'salt', type: 'bytes32' },
-//   ],
-//   domainData: {
-//     name: 'EIP 712 Testing Dapp',
-//     version: '2',
-//     chainId: 4,
-//     verifyingContract: '0x1C56346CD2A2Bf3202F771f50d3D14a367B48070',
-//     salt: '0xf2d857f4a3edcb9b78b4d503bfe733db1e3f6cdc2b7971ee739626c97e86a558',
-//   },
-//   Bid: [{ name: 'amount', type: 'uint256' }, { name: 'bidder', type: 'Identity' }],
-// };
 
 export default App;
