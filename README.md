@@ -33,7 +33,7 @@ Ethereum wallets like MetaMask will soon introduce the EIP712 standard for typed
 
 ## GIF:
 
-![](eip-712-test.gif)
+![](eip712.gif)
 
 # The current project is still WIP
 
